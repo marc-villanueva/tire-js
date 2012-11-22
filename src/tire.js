@@ -245,8 +245,11 @@ TireJs.klasses.search.prototype = {
   facet: function() {
     // TODO - add faceting
   },
-  filter: function(type, options) {
-    this._filters.push(new TireJs.klasses.filter(type, options));
+  filter: function() {
+    if(arguments.length == 1) 
+      this._filters.push(arguments[0]);
+    else
+      this._filters.push(new TireJs.klasses.filter(arguments[0], arguments[1]));
   },
   from: function(value) {
     this._from = value;
@@ -363,13 +366,105 @@ TireJs.klasses.booleanQuery.prototype = {
 //----------------------------
 // Filter class
 //
-//
+// Generic filter class that you can
+// use to build any type of ES filter.
+// You can use the specific filter classes
+// if you don't want to deal with building 
+// the objects yourself.
 //----------------------------
 TireJs.klasses.filter = function(type, options) {
   this._value = {};
   this._value[type] = options;
 }
 TireJs.klasses.filter.prototype = {
+  toObject: function() {
+    return this._value;
+  }
+}
+
+//----------------------------
+// Exists filter class
+//
+// Constructs the exists ES filter
+// http://www.elasticsearch.org/guide/reference/query-dsl/exists-filter.html
+//----------------------------
+TireJs.klasses.existsFilter = function(field, value) {
+  this._field = field;
+  this._value = value;
+}
+TireJs.klasses.existsFilter.prototype = {
+  toObject: function() {
+    return JSON.parse('{"exists": {"' + this._field + '": "' + this._value + '"}}');
+  }
+}
+
+//----------------------------
+// Term filter class
+//
+// Constructs the term ES filter
+// http://www.elasticsearch.org/guide/reference/query-dsl/term-filter.html
+//----------------------------
+TireJs.klasses.termFilter = function(field, value) {
+  this._field = field;
+  this._value = value;
+}
+TireJs.klasses.termFilter.prototype = {
+  toObject: function() {
+    return JSON.parse('{"term": {"' + this._field + '": "' + this._value + '"}}');
+  }
+}
+
+//----------------------------
+// Range filter class
+//
+// Constructs the range ES filter
+// http://www.elasticsearch.org/guide/reference/query-dsl/range-filter.html
+//----------------------------
+TireJs.klasses.rangeFilter = function(field, block) {
+  this._value = JSON.parse('{"range": {"' + field + '":{}}}');
+  this._rangeOptions = this._value['range'][field];
+
+  if(typeof block == 'function')
+    block.call(this); 
+}
+TireJs.klasses.rangeFilter.prototype = {
+  from: function(value) {
+    this._rangeOptions['from'] = value;
+  },
+  to: function(value) {
+    this._rangeOptions['to'] = value;
+  },
+  includeLower: function(value) {
+    this._rangeOptions['include_lower'] = value;
+  },
+  includeUpper: function(value) {
+    this._rangeOptions['include_upper'] = value;
+  },
+  toObject: function() {
+    return this._value;
+  }
+}
+
+//----------------------------
+// Geo Distance filter class
+//
+// Constructs the geo_distance ES filter
+// http://www.elasticsearch.org/guide/reference/query-dsl/geo-distance-filter.html
+//----------------------------
+TireJs.klasses.geoDistanceFilter = function(field, block) {
+  this._field = field;
+  this._value = JSON.parse('{"geo_distance": {"distance": "50mi", "' + field + '": ""}}');
+  
+  if(typeof block == 'function')
+    block.call(this); 
+}
+TireJs.klasses.geoDistanceFilter.prototype = {
+  distance: function(value) {
+    this._value['geo_distance']['distance'] = value;
+  },
+  latlon: function(value) {
+    this._value['geo_distance'][this._field] = value;
+  },
   toObject: function() {
     return this._value;
   }

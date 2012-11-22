@@ -77,7 +77,23 @@ Add some filters:
 
     console.log(search.toJson());
 
-Please check out examples.html in the examples folder.
+If you don't remember the filter structure, you can use the specific filter classes:
+
+    var search = TireJs.search(indexName);
+    search.query(function() {
+      this.all();
+    })
+    search.filter(new TireJs.klasses.termFilter('field1', 'value'));
+    search.filter(new TireJs.klasses.rangeFilter('field2', function(){
+      this.from(0);
+      this.to(10);
+    }))
+    search.from(0);
+    search.size(20);
+
+    console.log(search.toJson());
+
+Please check out [example.html](https://github.com/marc-villanueva/tire-js/blob/master/example/example.html) in the examples folder.
 
 ## To Do
 
