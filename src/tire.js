@@ -256,29 +256,32 @@ TireJs.klasses.search.prototype = {
   },
   results: function() {
     var client = TireJs.configuration.client();    
-    return client.post(this.url(), JSON.stringify(this.toJson()));
+    return client.post(this.url(), this.toJson());
   }, 
   toJson: function() {
+    return JSON.stringify(this.toObject());
+  },
+  toObject: function() {
     var obj = {};
-    if(this._query) obj.query = this._query.toJson();
+    if(this._query) obj.query = this._query.toObject();
     if(this._filters.length == 1) {
-      obj.filter = this._filters[0].toJson();
+      obj.filter = this._filters[0].toObject();
     }
     if(this._filters.length > 1) {
       var filters = [];
       for(var i = 0; i < this._filters.length; i++) {
-        filters.push(this._filters[i].toJson());
+        filters.push(this._filters[i].toObject());
       }
 
       obj.filter = {and: filters };
     }
     if(this._from != null) obj.from = this._from;
     if(this._size != null) obj.size = this._size;
-    if(this._sort != null) obj.sort = this._sort.toJson();
+    if(this._sort != null) obj.sort = this._sort.toObject();
     return obj;
   },
   toCurl: function() {
-    return "curl -XGET '" + this.url() + "' -d '" + JSON.stringify(this.toJson()) + "'";
+    return "curl -XGET '" + this.url() + "' -d '" + this.toJson() + "'";
   }
 }
 
@@ -310,9 +313,9 @@ TireJs.klasses.query.prototype = {
   },
   boolean: function(options, block) {
     var bool = new TireJs.klasses.booleanQuery(options, block);
-    this._value['bool'] = bool.toJson();
+    this._value['bool'] = bool.toObject();
   },
-  toJson: function() {
+  toObject: function() {
     return this._value; 
   }
 }
@@ -322,7 +325,7 @@ TireJs.klasses.query.prototype = {
 //
 //
 //----------------------------
-TireJs.klasses.booleanQuery = function(options, block) {
+TireJs.klasses.booleanQuery = function(block, options) {
   this._options = options;
   this._value = {};
 
@@ -335,23 +338,23 @@ TireJs.klasses.booleanQuery.prototype = {
       this._value['must'] = [];
 
     var query = new TireJs.klasses.query(block);
-    this._value['must'].push(query.toJson());
+    this._value['must'].push(query.toObject());
   },
   mustNot: function(block) {
     if(typeof this._value['must_not'] == 'undefined')
       this._value['must_not'] = [];
 
     var query = new TireJs.klasses.query(block);
-    this._value['must_not'].push(query.toJson());
+    this._value['must_not'].push(query.toObject());
   },
   should: function(block) {
     if(typeof this._value['should'] == 'undefined')
       this._value['should'] = [];
 
     var query = new TireJs.klasses.query(block);
-    this._value['should'].push(query.toJson());
+    this._value['should'].push(query.toObject());
   },
-  toJson: function() {
+  toObject: function() {
     $.extend(this._value, this._options);
     return this._value;  
   }
@@ -367,7 +370,7 @@ TireJs.klasses.filter = function(type, options) {
   this._value[type] = options;
 }
 TireJs.klasses.filter.prototype = {
-  toJson: function() {
+  toObject: function() {
     return this._value;
   }
 }
@@ -393,7 +396,7 @@ TireJs.klasses.sort.prototype = {
     
     this._value.push(s);
   },
-  toJson: function() {   
+  toObject: function() {   
     return this._value;
   }
 }

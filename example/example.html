@@ -210,7 +210,7 @@ $('#search-match-all').on('click', function(e) {
   search.from(0);
   search.size(20);
 
-  output(search.toJson());
+  output(search.toObject());
 })
 
 $('#search-querystring').on('click', function(e) {
@@ -225,7 +225,7 @@ $('#search-querystring').on('click', function(e) {
   search.sort(function() {
     this.by('field1', 'asc');
   })
-  output(search.toJson());
+  output(search.toObject());
 })
 
 $('#search-boolean').on('click', function(e) {
@@ -233,7 +233,7 @@ $('#search-boolean').on('click', function(e) {
   var indexName = $('#search-index-container select').val();
   var search = TireJs.search(indexName);
   search.query(function() {
-    this.boolean(null, function() {
+    this.boolean(function() {
       this.must(function() {
         this.term('field1', 'value');
       })
@@ -246,7 +246,7 @@ $('#search-boolean').on('click', function(e) {
   search.from(0);
   search.size(20);
 
-  output(search.toJson());  
+  output(search.toObject());  
 });
 
 $('#search-filter').on('click', function(e) {
@@ -261,7 +261,7 @@ $('#search-filter').on('click', function(e) {
   search.from(0);
   search.size(20);
 
-  output(search.toJson());  
+  output(search.toObject());  
 });
 </script>
 </body>

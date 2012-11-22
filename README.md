@@ -49,7 +49,7 @@ Query using the [bool](http://www.elasticsearch.org/guide/reference/query-dsl/bo
 
     var search = TireJs.search(indexName);
     search.query(function() {
-      this.boolean(null, function() {
+      this.boolean(function() {
         this.must(function() {
           this.term('field1', 'value');
         })
