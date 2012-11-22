@@ -1,0 +1,302 @@
+<html>
+<head>
+  <script type="text/javascript" src="../lib/jquery.js"></script>
+  <script type="text/javascript" src="../lib/underscore.js"></script>  <!-- Templating -->
+  <script type="text/javascript" src="../src/tire.js"></script>           <!-- ES querying -->
+  <script type="text/javascript" src="utils.js"></script>          <!-- helpers -->
+  <script type="text/javascript">
+    var TermQueryForm = function(options) {
+      this._tmpl = $('#termQueryTmpl').html();
+      this._listTmpl = $('#fieldListTmpl').html();
+      this._fields = options.fields;
+      this._container = options.container;
+      this._field = null;
+      this._value = null;
+    }
+    TermQueryForm.prototype = {
+      field: function(value) {
+        if(value) 
+          return this._field.val();
+        else
+          this._field.val(value);
+      },
+      value: function(value) {
+        if(value)
+          return this._value.val();
+        else
+          this._value.val(value);
+      },
+      draw: function() {
+        var optionsHtml = '';
+        $(this._fields).each(function() {
+          optionsHtml += '<option>' + this + '</option>';
+        })
+        var select = _.template(this._listTmpl, {options: optionsHtml });
+        this._container.html(_.template(this._tmpl, {field_select: select}));
+      }
+    }
+
+    var QuerystringQueryForm = function(options) {
+      this._tmpl = $('#querystringQueryTmpl').html();
+      this._listTmpl = $('#fieldListTmpl').html();
+      this._container = options.container;
+      this._fields = options.fields;
+      this._keywords = null;
+      this._selectedFields = null;
+      this._operator = null;
+      this._options = null;
+    }
+    QuerystringQueryForm.prototype = {
+      draw: function() {
+        var optionsHtml = '';
+        $(this._fields).each(function() {
+          optionsHtml += '<option>' + this + '</option>';
+        })
+        var select = _.template(this._listTmpl, {multiple: true, size: 10, options: optionsHtml });
+        this._container.html(_.template(this._tmpl, {field_select: select}));
+      }
+    }
+  </script>
+</head>
+
+<body>
+
+<div>
+  <input type="text" id="server" size="50" value="http://localhost:9200" /><button id="connect">connect</button>
+  <span id="indices-container" style="display:none;">
+    <label>Indices:</label>
+    <select id="indices">
+      <option>Please select</option>
+    </select>
+  </span>
+</div>
+
+<div id="queryContainer" style="">
+
+  <div id="query">
+    <select class="queryTypes">
+      <option>Please select</option>
+      <option>Boolean</option>
+      <option>Querystring</option>
+      <option>Term</option>
+      <option>Match all</option>
+    </select>
+  </div>
+  <div id="filters"></div>
+
+  <div>
+    <label>From:</label>
+    <input type="text" id="from" value="0"/>
+    
+    <label>Size:</label>
+    <input type="text" id="size" value="25"/>
+  </div>
+
+  <div>
+    <button id="search">Search</button>
+  </div>
+</div>
+
+<div>
+  <textarea id="output" rows="50" cols="40"></textarea>
+  <textarea id="output2" rows="50" cols="100"></textarea>
+</div>
+
+
+<div style="display:none;" id="templates">
+   <select id="filter">
+    <option>Please select</option>
+    <option>exists</option>
+    <option>geo_distance</option>
+    <option>not</option>
+    <option>or</option>
+    <option>prefix</option>
+    <option>range</option>
+    <option>term</option>
+  </select>
+</div>
+
+<!--
+  Field list template
+-->
+<script type="text/html" id="fieldListTmpl">
+<%
+  var sizeAttr = '';
+  var multipleAttr = '';
+
+  if(typeof multiple != 'undefined' && multiple) { 
+    multipleAttr = 'multiple="multiple"';
+  }
+  if(typeof size != 'undefined') {
+    sizeAttr = 'size="' + size + '"';
+  }
+%>
+<select class="field_list" <%= multipleAttr %> <%= sizeAttr %>><%= options %></select>
+</script>
+
+<!--
+  Query types template
+-->
+<script type="text/html" id="queryTypesTmpl">
+<div>
+  <label>Query Type</label>
+  <select class="queryTypes">
+    <option>Please select</option>
+    <option>Boolean</option>
+    <option>Querystring</option>
+    <option>Term</option>
+    <option>Match all</option>
+  </select>
+</div>
+</script>
+
+<!--
+  Term query template
+-->
+<script type="text/html" id="termQueryTmpl">
+<div class="termQueryContainer">
+  <label>Field</label>
+  <%= field_select %>
+
+  <label>Value</label>
+  <input type="text" class="termQueryValue"/>
+</div>
+</script>
+
+<!--
+  Querystring query template
+-->
+<script type="text/html" id="querystringQueryTmpl">
+<div>
+  <label>Keyword</label>
+  <input type="text" class="querystringQueryKeyword"/>
+
+  <label>Fields</label>
+  <%= field_select %>
+
+  <label>Operator</label>
+  <select class="querystringQueryOperator">
+    <option>OR</option>
+    <option>AND</opton>
+  </select>
+</div>
+</script>
+
+<!--
+  Boolean query template
+-->
+<script type="text/html" id="booleanQueryTmpl">
+<select class="booleanTypes" style="display:none;">
+    <option>Please select</option>
+    <option>must</option>
+    <option>must_not</option>
+    <option>should</option>
+</select>
+
+</script>
+
+
+<script type="text/javascript">
+function output(selector, json) {
+  $(selector).val( FormatJSON(json) );  
+}
+
+function getFields(type, path) {
+  if(typeof path == 'undefined')
+    path = '';
+  var output = [];
+  
+  for(prop in type) {
+    if("properties" in type[prop]) { 
+      var newPath = path != '' ? path + '.' + prop : prop;
+      output = output.concat(getFields(type[prop].properties, newPath));
+    } else if("fields" in type[prop]) {
+      var newPath = path != '' ? path + '.' + prop : prop;
+      output = output.concat(getFields(type[prop].fields, newPath));
+    } else {
+      output.push(path + '.' + prop);
+    }
+  }
+  return output;
+}
+
+var field_list = [];
+
+$('#connect').on('click', function(e) {
+  e.preventDefault();
+  var url = $('#server').val();
+
+  TireJs.configure(function() {
+    this.url(url);
+  });
+
+  $('#indices').empty();
+  $('#indices').append('<option>Please select</option>');
+
+  TireJs.indices().done(function(data) {
+    $(data).each(function() {
+      $('#indices').append('<option>' + this.name() + '</option>');
+    });
+
+    $('#indices-container').show();
+  })
+});
+
+$('#indices').on('change', function(e) {
+  var selected = $(this).val();
+  if(selected != 'Please select') {
+    var index = TireJs.index($(this).val());
+    index.mapping().done(function(data) {
+      field_list = getFields(data[index.name()])
+      output('#output2', data);
+    });
+
+    $('#queryContainer').show();
+  }
+});
+
+$('.queryTypes').on('change', function(e) {
+  switch($(this).val()) {
+    case 'Match all': 
+      break;
+    case 'Term':
+      var termQuery = new TermQueryForm({
+        container: $('#query'),
+        fields: field_list
+      });
+
+      termQuery.draw();
+      break;
+    case 'Querystring':
+      var querystringQuery = new QuerystringQueryForm({
+        container: $('#query'),
+        fields: field_list
+      });
+      querystringQuery.draw();
+      break;
+  }
+});
+
+$('#search').on('click', function(e) {
+  e.preventDefault();
+  var index = $('#indices').val();
+  var from = $('#from').val();
+  var size = $('#size').val();
+
+  var search = TireJs.search(index);
+  search.query(function() {
+    this.all();
+  })
+  search.from(from);
+  search.size(size);
+
+  output('#output', search.toJson());
+
+  search.results().done(function(data) {
+    output('#output2', data);
+  });
+});
+
+</script>
+</body>
+</html>

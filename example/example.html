@@ -1,0 +1,268 @@
+<html>
+<head>
+  <script type="text/javascript" src="../lib/jquery.js"></script>
+  <script type="text/javascript" src="../src/tire.js"></script>        
+  <script type="text/javascript" src="utils.js"></script>              
+</head>
+
+<body>
+
+<div>
+  elasticsearch server: <input type="text" id="server" size="50" value="http://localhost:9200" />
+</div>
+<div style="float: left;">
+  <div>
+    <h2>Index</h2>
+    <button id="index-get">Get Indices</button>
+    <div id="index-container"></div>
+    <button id="index-get-mapping">Get Mapping</button>
+    <button id="index-get-settings">Get Settings</button>
+  </div>
+
+  <div>
+    <h2>Search</h2>
+    <button id="search-index-get">Get Indices</button>
+    <div id="search-index-container"></div>
+    <button id="search-match-all">Match All</button>
+    <button id="search-querystring">Querystring</button>
+    <button id="search-boolean">Boolean</button>
+    <button id="search-filter">Filter</button>
+  </div>
+  <div>
+    <h2>Stats API</h2>
+    <div>
+      <select id="stat-types" multiple="multiple" size="8">
+        <option selected="selected">docs</option>
+        <option selected="selected">store</option>
+        <option selected="selected">indexing</option>
+        <option selected="selected">get</option>
+        <option selected="selected">search</option>
+        <option>merge</option>
+        <option>flush</option>
+        <option>refresh</option>
+      </select>
+    </div>
+    <div>
+      <button id="cluster-stats" type="button">Cluster-wide Stats</button><br/>
+      <button id="index-stats" type="button">Index Stats</button>
+      <div id="index-stats-container" style="display:none;">
+        <button id="index-stats-get">Go</button>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <h2>Status API</h2>
+    <div>
+      <select id="status-types" multiple="multiple" size="2">
+        <option>recovery</option>
+        <option>snapshot</option>
+      </select>
+    </div>
+    <div>
+      <button id="cluster-status" type="button">Cluster-wide Status</button><br/>
+      <button id="index-status" type="button">Index Status</button>
+      <div id="index-status-container" style="display:none;">
+        <button id="index-status-get">Go</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div style="float: right;">
+  <h2>Output</h2>
+  <textarea id="output" rows="50" cols="100"></textarea>
+</div>
+
+
+<script type="text/javascript">
+function output(data) {
+  $('#output').val( FormatJSON(data) );  
+}
+
+function setTireUrl() {
+  var url = $('#server').val();
+  TireJs.configure(function() {
+    this.url(url);
+  })
+}
+
+function createIndexSelect(options) {
+  var html = '<select multiple="' + options.multiple + '" size="' + options.size + '">';
+  TireJs.indices().done(function(data) {
+    $(data).each(function() {
+      html += '<option>' + this.name() + '</option>';
+    })
+
+    html += '</select>';
+    options.container.prepend(html);
+  })
+}
+
+function getStats() {
+  var indices = $('#index-stats-container select').val();
+  indices = indices ? indices.join(',') : null;
+  var statTypes = $('#stat-types').val();
+  statTypes = $(statTypes).map(function() {
+    return this + "=true";
+  }).toArray();
+  statTypes.unshift('clear=true');
+  TireJs.stats(indices, statTypes).results().done(function(data) {
+    output(data);  
+  })
+}
+
+function getStatus() {
+  var indices = $('#index-status-container select').val();
+  indices = indices ? indices.join(',') : null;
+  var statusTypes = $('#status-types').val();
+  statusTypes = $(statusTypes).map(function() {
+    return this + "=true";
+  }).toArray();
+  
+  TireJs.status(indices, statusTypes).results().done(function(data) {
+    output(data);  
+  })
+}
+
+$('#cluster-stats').on('click', function(e){
+  setTireUrl();
+  getStats();
+})
+
+$('#index-stats').on('click', function() {
+  setTireUrl();
+  createIndexSelect({
+    container: $('#index-stats-container'),
+    multiple: 'multiple',
+    size: 5
+  })
+  $('#index-stats-container').show();
+})
+
+$('#index-stats-get').on('click', function(e) {
+  setTireUrl();
+  getStats();
+})
+
+$('#cluster-status').on('click', function(e){
+  setTireUrl();
+  getStatus();
+})
+
+$('#index-status').on('click', function() {
+  setTireUrl();
+  createIndexSelect({
+    container: $('#index-status-container'),
+    multiple: 'multiple',
+    size: 5
+  })
+  $('#index-status-container').show();
+})
+
+$('#index-status-get').on('click', function(e) {
+  setTireUrl();
+  getStatus();
+})
+
+$('#index-get').on('click', function(e) {
+  setTireUrl();
+  createIndexSelect({
+    container: $('#index-container'),
+    multiple: '',
+    size: 5
+  })
+})
+
+$('#index-get-mapping').on('click', function(e) {
+  setTireUrl();
+  var indexName = $('#index-container select').val();
+  var index = TireJs.index(indexName);
+  index.mapping().done(function(data) {
+    output(data);
+  })
+})
+
+$('#index-get-settings').on('click', function(e) {
+  setTireUrl();
+  var indexName = $('#index-container select').val();
+  var index = TireJs.index(indexName);
+  index.settings().done(function(data) {
+    output(data);
+  })
+})
+
+$('#search-index-get').on('click', function(e) {
+  setTireUrl();
+  createIndexSelect({
+    container: $('#search-index-container'),
+    multiple: '',
+    size: 5
+  })
+})
+
+$('#search-match-all').on('click', function(e) {
+  setTireUrl();
+  var indexName = $('#search-index-container select').val();
+  var search = TireJs.search(indexName);
+  search.query(function() {
+    this.all();
+  })
+  search.from(0);
+  search.size(20);
+
+  output(search.toJson());
+})
+
+$('#search-querystring').on('click', function(e) {
+  setTireUrl();
+  var indexName = $('#search-index-container select').val();
+  var search = TireJs.search(indexName);
+  search.query(function() {
+    this.string('search term', {fields: ['field1', 'field2'], default_operator: 'AND'});
+  })
+  search.from(0);
+  search.size(20);
+  search.sort(function() {
+    this.by('field1', 'asc');
+  })
+  output(search.toJson());
+})
+
+$('#search-boolean').on('click', function(e) {
+  setTireUrl();
+  var indexName = $('#search-index-container select').val();
+  var search = TireJs.search(indexName);
+  search.query(function() {
+    this.boolean(null, function() {
+      this.must(function() {
+        this.term('field1', 'value');
+      })
+      this.mustNot(function() {
+        this.string('search term', {default_field: 'field1', default_operator: 'OR'});
+      })
+    })
+  })
+
+  search.from(0);
+  search.size(20);
+
+  output(search.toJson());  
+});
+
+$('#search-filter').on('click', function(e) {
+  setTireUrl();
+  var indexName = $('#search-index-container select').val();
+  var search = TireJs.search(indexName);
+  search.query(function() {
+    this.all();
+  })
+  search.filter('term', {field1: 'value'});
+  search.filter('range', {field2: {from: 0, to: 10}});
+  search.from(0);
+  search.size(20);
+
+  output(search.toJson());  
+});
+</script>
+</body>
+</html>
