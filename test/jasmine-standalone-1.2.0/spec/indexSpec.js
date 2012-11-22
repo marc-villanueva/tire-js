@@ -13,5 +13,23 @@ describe('TireJs.klasses.index', function() {
     expect(index.url()).toBe(TireJs.configuration.url() + '/' + index.name());
   });
 
+  it('should call the correct mapping url', function() {
+    var url = index.url() + '/_mapping';
+    clientSpy = jasmine.createSpyObj('client', ['get']);
+    spyOn(TireJs.configuration, 'client').andReturn(clientSpy);
 
+    index.mapping();
+
+    expect(clientSpy.get).toHaveBeenCalledWith(url);
+  });
+
+  it('should call the correct settings url', function() {
+    var url = index.url() + '/_settings';
+    clientSpy = jasmine.createSpyObj('client', ['get']);
+    spyOn(TireJs.configuration, 'client').andReturn(clientSpy);
+
+    index.settings();
+
+    expect(clientSpy.get).toHaveBeenCalledWith(url);
+  });  
 });

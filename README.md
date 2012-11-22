@@ -93,6 +93,18 @@ If you don't remember the filter structure, you can use the specific filter clas
 
     console.log(search.toJson());
 
+There have been some other ES APIs that have been implemented.  Here are a few examples:
+
+    // indices stats api
+    TireJs.stats(['test1', 'test2']).results().done(function(data) {
+      console.log(data);  
+    })
+
+    // indices status api
+    TireJs.status('test', ['recovery=true']).results().done(function(data) {
+        console.log(data);  
+    })
+
 Please check out [example.html](https://github.com/marc-villanueva/tire-js/blob/master/example/example.html) in the examples folder.
 
 ## To Do
@@ -109,4 +121,4 @@ Lots - add more tests, implement more Tire functionality, etc
 
 ## Credits
 
-This script library was based on Karmi's [Tire](https://github.com/karmi/tire) gem.  
+This script library was based on Karmi's [Tire](https://github.com/karmi/tire) gem.
