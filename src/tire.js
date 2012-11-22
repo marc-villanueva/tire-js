@@ -19,6 +19,10 @@ TireJs = function() {
       return new TireJs.klasses.status(indices, options);
     },
 
+    segments: function(indices) {
+      return new TireJs.klasses.segments(indices);
+    },
+
     indices: function() {
       var dfd = new $.Deferred();
       var indexes = [];
@@ -99,19 +103,19 @@ TireJs.klasses.stats.prototype = {
 //
 // Constructors:
 //
-// var stats = new TireJs.klasses.stats();
-// var stats = new TireJs.klasses.stats('myindex', 'refresh=true');
-// var stats = new TireJs.klasses.stats(['myindex', 'myindex2'], ['refresh=true', 'flush=true']);
+// var stats = new TireJs.klasses.status();
+// var stats = new TireJs.klasses.status('myindex', 'recovery=true');
+// var stats = new TireJs.klasses.status(['myindex', 'myindex2'], ['recovery=true', 'snapshot=true']);
 //
 // Parameters:
 //
 // indices
-//  - nil -> stats for all indices in the cluster
+//  - nil -> status for all indices in the cluster
 //  - string -> name of single index
 //  - array -> array of index names
 //
 //  options
-//  - nil -> return default stats
+//  - nil -> return default status
 //  - string -> single key/value param option
 //  - array -> array of key/value param options
 //--------------------------------------------------------
@@ -129,6 +133,40 @@ TireJs.klasses.status.prototype = {
     var idx = this._indices.length > 0 ? '/' + this._indices.join(',') : '';
     var params = this._options.length > 0 ? '?' + this._options.join('&') : '';
     return TireJs.configuration.url() + idx + '/_status' + params;
+  },
+  results: function() {
+    var client = TireJs.configuration.client();
+    return client.get(this.url());
+  } 
+}
+
+//--------------------------------------------------------
+// Segments class
+//
+// http://www.elasticsearch.org/guide/reference/api/admin-indices-segments.html
+//
+// Constructors:
+//
+// var stats = new TireJs.klasses.segments();
+// var stats = new TireJs.klasses.segments('myindex');
+// var stats = new TireJs.klasses.segments(['myindex', 'myindex2']);
+//
+// Parameters:
+//
+// indices
+//  - nil -> segments for all indices in the cluster
+//  - string -> name of single index
+//  - array -> array of index names
+//--------------------------------------------------------
+TireJs.klasses.segments = function(indices) {
+ this._indices = [];
+  if(arguments[0])
+    this._indices = $.isArray(indices) ? indices : [indices];
+}
+TireJs.klasses.segments.prototype = {
+  url: function() {
+    var idx = this._indices.length > 0 ? '/' + this._indices.join(',') : '';
+    return TireJs.configuration.url() + idx + '/_segments';
   },
   results: function() {
     var client = TireJs.configuration.client();
@@ -454,7 +492,7 @@ TireJs.klasses.rangeFilter.prototype = {
 TireJs.klasses.geoDistanceFilter = function(field, block) {
   this._field = field;
   this._value = JSON.parse('{"geo_distance": {"distance": "50mi", "' + field + '": ""}}');
-  
+
   if(typeof block == 'function')
     block.call(this); 
 }

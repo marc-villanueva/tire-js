@@ -67,6 +67,17 @@
       </div>
     </div>
   </div>
+
+  <div>
+    <h2>Segments API</h2>
+    <div>
+      <button id="cluster-segments" type="button">Cluster-wide Segments</button><br/>
+      <button id="index-segments" type="button">Index Segments</button>
+      <div id="index-segments-container" style="display:none;">
+        <button id="index-segments-get">Go</button>
+      </div>
+    </div>
+  </div>
 </div>
 <div style="float: right;">
   <h2>Output</h2>
@@ -124,6 +135,15 @@ function getStatus() {
   })
 }
 
+function getSegments() {
+  var indices = $('#index-segments-container select').val();
+  indices = indices ? indices.join(',') : null;
+  
+  TireJs.segments(indices).results().done(function(data) {
+    output(data);  
+  })
+}
+
 $('#cluster-stats').on('click', function(e){
   setTireUrl();
   getStats();
@@ -163,6 +183,27 @@ $('#index-status-get').on('click', function(e) {
   setTireUrl();
   getStatus();
 })
+
+$('#cluster-segments').on('click', function(e){
+  setTireUrl();
+  getSegments();
+})
+
+$('#index-segments').on('click', function() {
+  setTireUrl();
+  createIndexSelect({
+    container: $('#index-segments-container'),
+    multiple: 'multiple',
+    size: 5
+  })
+  $('#index-segments-container').show();
+})
+
+$('#index-segments-get').on('click', function(e) {
+  setTireUrl();
+  getSegments();
+})
+
 
 $('#index-get').on('click', function(e) {
   setTireUrl();
