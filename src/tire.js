@@ -23,6 +23,14 @@ TireJs = function() {
       return new TireJs.klasses.segments(indices);
     },
 
+    clusterState: function(options) {
+      return new TireJs.klasses.clusterState(options);
+    },
+
+    clusterHealth: function(indices, options) {
+      return new TireJs.klasses.clusterHealth(indices, options);
+    },
+
     indices: function() {
       var dfd = new $.Deferred();
       var indexes = [];
@@ -173,6 +181,85 @@ TireJs.klasses.segments.prototype = {
     return client.get(this.url());
   } 
 }
+
+//--------------------------------------------------------
+// ClusterState class
+//
+// http://www.elasticsearch.org/guide/reference/api/admin-cluster-state.html
+//
+// Constructors:
+//
+// var stats = new TireJs.klasses.clusterState();
+// var stats = new TireJs.klasses.clusterState(filter_nodes=true);
+// var stats = new TireJs.klasses.clusterState([filter_nodes=true, filter_metadata=true]);
+//
+// Parameters:
+//
+// options
+//  - nil -> default cluster state info
+//  - string -> single key/value param option
+//  - array -> array of key/value param options
+//--------------------------------------------------------
+TireJs.klasses.clusterState = function(options) {
+  this._options = [];
+  if(arguments[0])
+    this._options = $.isArray(options) ? options : [options];
+}
+TireJs.klasses.clusterState.prototype = {
+  url: function() {
+    var params = this._options.length > 0 ? '?' + this._options.join('&') : '';
+    return TireJs.configuration.url() + '/_cluster/state' + params;
+  },
+  results: function() {
+    var client = TireJs.configuration.client();
+    return client.get(this.url());
+  }
+}
+
+//--------------------------------------------------------
+// ClusterHealth class
+//
+// http://www.elasticsearch.org/guide/reference/api/admin-cluster-health.html
+//
+// Constructors:
+//
+// var stats = new TireJs.klasses.clusterHealth();
+// var stats = new TireJs.klasses.clusterHealth('myindex', 'wait_for_status=yellow');
+// var stats = new TireJs.klasses.clusterHealth(['myindex', 'myindex2'], ['wait_for_status=yellow', 'wait_for=10s']);
+//
+// Parameters:
+//
+// indices
+//  - nil -> status for the cluster
+//  - string -> name of single index
+//  - array -> array of index names
+//
+//  options
+//  - nil -> return default status
+//  - string -> single key/value param option
+//  - array -> array of key/value param options
+//--------------------------------------------------------
+TireJs.klasses.clusterHealth = function(indices, options) {
+ this._indices = [];
+  if(arguments[0])
+    this._indices = $.isArray(indices) ? indices : [indices];
+
+  this._options = [];
+  if(arguments[1])
+    this._options = $.isArray(options) ? options : [options];
+}
+TireJs.klasses.status.prototype = {
+  url: function() {
+    var idx = this._indices.length > 0 ? '/' + this._indices.join(',') : '';
+    var params = this._options.length > 0 ? '?' + this._options.join('&') : '';
+    return TireJs.configuration.url() + '/_cluster/health/' + idx + params;
+  },
+  results: function() {
+    var client = TireJs.configuration.client();
+    return client.get(this.url());
+  } 
+}
+
 
 //----------------------------
 // JqueryClient class
