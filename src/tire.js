@@ -443,14 +443,87 @@ TireJs.klasses.query.prototype = {
     var bool = new TireJs.klasses.booleanQuery(options, block);
     this._value['bool'] = bool.toObject();
   },
+  boosting: function(options, block) {
+    var boosting = new TireJs.klasses.boostingQuery(options, block);
+    this._value['boosting'] = boosting.toObject();
+  },
+  nested: function(options, block) {
+    var nested = new TireJs.klasses.nestedQuery(options, block);
+    this._value['nested'] = nested.toObject();
+  },
   toObject: function() {
     return this._value; 
   }
 }
 
 //----------------------------
+// NestedQuery class
+//
+// http://www.elasticsearch.org/guide/reference/query-dsl/nested-query.html
+//
+//----------------------------
+TireJs.klasses.nestedQuery = function(block, options) {
+  this._options = options;
+  this._value = {};
+
+  if(typeof block == 'function')
+    block.call(this);
+}
+TireJs.klasses.nestedQuery.prototype = {
+  query: function(block) {
+    var query = new TireJs.klasses.query(block);
+    this._value['query'] = query.toObject();
+  },
+  path: function(value) {
+    this._value['path'] = value;
+  },
+  scoreMode: function(value) {
+    this._value['score_mode'] = value;
+  },
+  toObject: function() {
+    $.extend(this._value, this._options);
+    return this._value;  
+  }
+}
+
+//----------------------------
+// BoostingQuery class
+//
+// http://www.elasticsearch.org/guide/reference/query-dsl/boosting-query.html
+//
+//----------------------------
+TireJs.klasses.boostingQuery = function(block, options) {
+  this._options = options;
+  this._value = {};
+
+  if(typeof block == 'function')
+    block.call(this);
+}
+TireJs.klasses.boostingQuery.prototype = {
+  positive: function(block) {
+    if(typeof this._value['positive'] == 'undefined')
+      this._value['positive'] = [];
+
+    var query = new TireJs.klasses.query(block);
+    this._value['positive'].push(query.toObject());
+  },
+  negative: function(block) {
+    if(typeof this._value['negative'] == 'undefined')
+      this._value['negative'] = [];
+
+    var query = new TireJs.klasses.query(block);
+    this._value['negative'].push(query.toObject());
+  },
+  toObject: function() {
+    $.extend(this._value, this._options);
+    return this._value;  
+  }
+}
+
+//----------------------------
 // BooleanQuery class
 //
+// http://www.elasticsearch.org/guide/reference/query-dsl/bool-query.html
 //
 //----------------------------
 TireJs.klasses.booleanQuery = function(block, options) {
@@ -599,6 +672,7 @@ TireJs.klasses.geoDistanceFilter.prototype = {
 // Sort class
 //
 // creates ES query sort 
+// http://www.elasticsearch.org/guide/reference/api/search/sort.html
 //----------------------------
 TireJs.klasses.sort = function(block) {
   this._value = [];

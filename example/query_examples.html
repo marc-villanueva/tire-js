@@ -1,0 +1,51 @@
+<html>
+<head>
+  <script type="text/javascript" src="../lib/jquery.js"></script>
+  <script type="text/javascript" src="../src/tire.js"></script>        
+  <script type="text/javascript" src="utils.js"></script>              
+</head>
+
+<body>
+
+<script type="text/javascript">
+
+// Boosting Query
+var search = TireJs.search('my-index');
+search.query(function() {
+  this.boosting(function() {
+    this.positive(function() {
+      this.term('field1', 'value1');
+    });
+
+    this.negative(function() {
+      this.term('field2', 'value2');
+    })
+  }, {negative_boost: 0.2})
+})
+
+search.from(0);
+search.size(20);
+
+console.log(FormatJSON(search.toObject()));
+
+// Nested Query
+search = TireJs.search('my-index');
+search.query(function() {
+  this.nested(function() {
+    this.query(function() {
+      this.term('field1', 'value1');
+    })
+
+    this.path('obj1.nestedField');
+    this.scoreMode('max');
+  })
+})
+
+search.from(0);
+search.size(20);
+
+console.log(FormatJSON(search.toObject()));
+
+</script>
+</body>
+</html>
