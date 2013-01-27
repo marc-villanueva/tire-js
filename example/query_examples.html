@@ -9,6 +9,13 @@
 
 <script type="text/javascript">
 
+// Count API
+var count = TireJs.count('my-index', 'my-type', ['df=my-default-field', 'default_operator=OR'], function() {
+    this.string('search term', {fields: ['field1', 'field2'], default_operator: 'AND'});
+});
+console.log(count.url());
+console.log(count.toJson());
+
 // Boosting Query
 var search = TireJs.search('my-index');
 search.query(function() {
@@ -45,7 +52,6 @@ search.from(0);
 search.size(20);
 
 console.log(FormatJSON(search.toObject()));
-
 </script>
 </body>
 </html>

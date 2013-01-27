@@ -56,9 +56,83 @@ TireJs = function() {
 
     search: function(indices, options, block) {
       return new TireJs.klasses.search(indices, options, block);
+    },
+
+    count: function(indices, types, options, block) {
+      return new TireJs.klasses.count(indices, types, options, block);
     }
   }
 }();
+
+//--------------------------------------------------------
+// Count class
+//
+// http://www.elasticsearch.org/guide/reference/api/count.html
+//
+// Constructors:
+//
+// var count = new TireJs.klasses.count();
+// var count = new TireJs.klasses.count('my-index');
+// var count = new TireJs.klasses.count('my-index', 'my-types');
+// var count = new TireJs.klasses.count('my-index', ['type1', 'type2'], ['df=my-default-field']);
+// var count = new TireJs.klasses.count('my-index', null, null, function() { this.term('field', 'value'); );
+
+// Parameters:
+//
+// indices
+//  - nil -> all indices in the cluster
+//  - string -> name of single index
+//  - array -> array of index names
+//
+// types
+//  - nil -> all types
+//  - string -> name of single type
+//  - array -> array of type names
+//
+//  options
+//  - nil -> defaults
+//  - string -> single key/value param option
+//  - array -> array of key/value param options
+//
+//  block
+//  - function -> block to be performed on a TireJs.klasses.Query object
+//--------------------------------------------------------
+TireJs.klasses.count = function(indices, types, options, block) {
+  this._indices = [];
+  if(arguments[0])
+    this._indices = $.isArray(indices) ? indices : [indices];
+
+  this._types = [];
+  if(arguments[1])
+    this._types = $.isArray(types) ? types : [types];
+
+  this._options = [];
+  if(arguments[2])
+    this._options = $.isArray(options) ? options : [options];
+
+  this._query = null;
+  if(typeof block == 'function') {
+    this._query = new TireJs.klasses.query(block);
+  }
+
+}
+TireJs.klasses.count.prototype = {
+  url: function() {
+    var idx = this._indices.length > 0 ? '/' + this._indices.join(',') : '';
+    var types = this._types.length > 0 ? '/' + this._types.join(',') : '';
+    var params = this._options.length > 0 ? '?' + this._options.join('&') : '';
+    return TireJs.configuration.url() + idx + types + '/_count' + params;
+  },
+  toJson: function() {
+    if(this._query) {
+      return JSON.stringify(this._query.toObject());
+    }
+  },
+  results: function() {
+    var client = TireJs.configuration.client();
+    return client.post(this.url(), this.toJson());
+  }
+}
 
 //--------------------------------------------------------
 // Stats class
