@@ -1,7 +1,7 @@
 //----------------------------
 // Main DSL for TireJs
 //
-// 
+//
 //----------------------------
 TireJs = function() {
   return {
@@ -12,7 +12,7 @@ TireJs = function() {
     },
 
     stats: function(indices, options) {
-      return new TireJs.klasses.stats(indices, options);  
+      return new TireJs.klasses.stats(indices, options);
     },
 
     status: function(indices, options) {
@@ -219,7 +219,7 @@ TireJs.klasses.status.prototype = {
   results: function() {
     var client = TireJs.configuration.client();
     return client.get(this.url());
-  } 
+  }
 }
 
 //--------------------------------------------------------
@@ -253,7 +253,7 @@ TireJs.klasses.segments.prototype = {
   results: function() {
     var client = TireJs.configuration.client();
     return client.get(this.url());
-  } 
+  }
 }
 
 //--------------------------------------------------------
@@ -331,7 +331,7 @@ TireJs.klasses.status.prototype = {
   results: function() {
     var client = TireJs.configuration.client();
     return client.get(this.url());
-  } 
+  }
 }
 
 
@@ -427,7 +427,7 @@ TireJs.klasses.search = function(indices, options, block) {
   this._path = ['/', idx.join(','), '_search'].join('/').replace(/\/\//g, '/');
   this._filters = [];
   this._options = options ? options : {};
-  
+
   if(typeof block == 'function')
     block.call(this);
 }
@@ -445,7 +445,7 @@ TireJs.klasses.search.prototype = {
     // TODO - add faceting
   },
   filter: function() {
-    if(arguments.length == 1) 
+    if(arguments.length == 1)
       this._filters.push(arguments[0]);
     else
       this._filters.push(new TireJs.klasses.filter(arguments[0], arguments[1]));
@@ -457,9 +457,9 @@ TireJs.klasses.search.prototype = {
     this._size = value;
   },
   results: function() {
-    var client = TireJs.configuration.client();    
+    var client = TireJs.configuration.client();
     return client.post(this.url(), this.toJson());
-  }, 
+  },
   toJson: function() {
     return JSON.stringify(this.toObject());
   },
@@ -504,7 +504,7 @@ TireJs.klasses.query.prototype = {
   },
   term: function(field, value, options) {
     var query = {};
-    query[field] = {term: value}; 
+    query[field] = {term: value};
     $.extend(query[field], options);
     this._value = {term: query};
   },
@@ -525,8 +525,79 @@ TireJs.klasses.query.prototype = {
     var nested = new TireJs.klasses.nestedQuery(options, block);
     this._value['nested'] = nested.toObject();
   },
+  customFiltersScore: function(block) {
+    var custom = new TireJs.klasses.customFiltersScoreQuery(block);
+    this._value['custom_filters_score'] = custom.toObject();
+  },
   toObject: function() {
-    return this._value; 
+    return this._value;
+  }
+}
+
+//----------------------------
+// CustomFiltersScoreQuery class
+//
+// http://www.elasticsearch.org/guide/reference/query-dsl/custom-filters-score-query/
+//
+//----------------------------
+TireJs.klasses.customFilter = function(block) {
+  this._value = {};
+  this._filters = [];
+
+  if(typeof block == 'function')
+    block.call(this);
+}
+TireJs.klasses.customFilter.prototype = {
+  filter: function() {
+    if(arguments.length == 1)
+      this._filters.push(arguments[0]);
+    else
+      this._filters.push(new TireJs.klasses.filter(arguments[0], arguments[1]));
+  },
+  boost: function(boost) {
+    this._value['boost'] = boost;
+  },
+  script: function(script) {
+    this._value['script'] = script;
+  },
+  toObject: function() {
+    if(this._filters.length == 1) {
+      this._value['filter'] = this._filters[0].toObject();
+    }
+    if(this._filters.length > 1) {
+      var filters = [];
+      for(var i = 0; i < this._filters.length; i++) {
+        filters.push(this._filters[i].toObject());
+      }
+
+      this._value['filter'] = {and: filters };
+    }
+
+    return this._value;
+  }
+}
+
+TireJs.klasses.customFiltersScoreQuery = function(block) {
+  this._value = {};
+  this._value['filters'] = [];
+
+  if(typeof block == 'function')
+    block.call(this);
+}
+TireJs.klasses.customFiltersScoreQuery.prototype = {
+  query: function(block) {
+    var query = new TireJs.klasses.query(block);
+    this._value['query'] = query.toObject();
+  },
+  filter: function(block) {
+    var filter = new TireJs.klasses.customFilter(block);
+    this._value['filters'].push(filter.toObject());
+  },
+  scoreMode: function(mode) {
+    this._value['score_mode'] = mode;
+  },
+  toObject: function() {
+    return this._value;
   }
 }
 
@@ -556,7 +627,7 @@ TireJs.klasses.nestedQuery.prototype = {
   },
   toObject: function() {
     $.extend(this._value, this._options);
-    return this._value;  
+    return this._value;
   }
 }
 
@@ -590,7 +661,7 @@ TireJs.klasses.boostingQuery.prototype = {
   },
   toObject: function() {
     $.extend(this._value, this._options);
-    return this._value;  
+    return this._value;
   }
 }
 
@@ -631,7 +702,7 @@ TireJs.klasses.booleanQuery.prototype = {
   },
   toObject: function() {
     $.extend(this._value, this._options);
-    return this._value;  
+    return this._value;
   }
 }
 
@@ -641,7 +712,7 @@ TireJs.klasses.booleanQuery.prototype = {
 // Generic filter class that you can
 // use to build any type of ES filter.
 // You can use the specific filter classes
-// if you don't want to deal with building 
+// if you don't want to deal with building
 // the objects yourself.
 //----------------------------
 TireJs.klasses.filter = function(type, options) {
@@ -697,7 +768,7 @@ TireJs.klasses.rangeFilter = function(field, block) {
   this._rangeOptions = this._value['range'][field];
 
   if(typeof block == 'function')
-    block.call(this); 
+    block.call(this);
 }
 TireJs.klasses.rangeFilter.prototype = {
   from: function(value) {
@@ -728,7 +799,7 @@ TireJs.klasses.geoDistanceFilter = function(field, block) {
   this._value = JSON.parse('{"geo_distance": {"distance": "50mi", "' + field + '": ""}}');
 
   if(typeof block == 'function')
-    block.call(this); 
+    block.call(this);
 }
 TireJs.klasses.geoDistanceFilter.prototype = {
   distance: function(value) {
@@ -745,7 +816,7 @@ TireJs.klasses.geoDistanceFilter.prototype = {
 //----------------------------
 // Sort class
 //
-// creates ES query sort 
+// creates ES query sort
 // http://www.elasticsearch.org/guide/reference/api/search/sort.html
 //----------------------------
 TireJs.klasses.sort = function(block) {
@@ -760,11 +831,11 @@ TireJs.klasses.sort.prototype = {
     if(direction) {
       s = {};
       s[name] = direction;
-    } 
-    
+    }
+
     this._value.push(s);
   },
-  toObject: function() {   
+  toObject: function() {
     return this._value;
   }
 }

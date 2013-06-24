@@ -1,13 +1,47 @@
 <html>
 <head>
   <script type="text/javascript" src="../lib/jquery.js"></script>
-  <script type="text/javascript" src="../src/tire.js"></script>        
-  <script type="text/javascript" src="utils.js"></script>              
+  <script type="text/javascript" src="../src/tire.js"></script>
+  <script type="text/javascript" src="utils.js"></script>
 </head>
 
 <body>
 
 <script type="text/javascript">
+
+// Custom Filters Score Query
+var search = TireJs.search('my-index');
+search.query(function() {
+  this.customFiltersScore(function() {
+    this.query(function() {
+      this.all();
+    })
+
+    this.filter(function() {
+      this.filter(new TireJs.klasses.termFilter('my-field', 'my-value'));
+      this.boost('1.2');
+    });
+
+    this.filter(function() {
+      this.filter(new TireJs.klasses.rangeFilter('age', function() {
+        this.from(10);
+      }))
+      this.script({
+            "script" : "doc['num1'].value &gt; param1",
+            "params" : {
+                "param1" : 5
+            }
+      })
+    })
+
+    this.scoreMode('multiply');
+  })
+})
+
+search.from(0);
+search.size(20);
+
+console.log(FormatJSON(search.toObject()));
 
 // Count API
 var count = TireJs.count('my-index', 'my-type', ['df=my-default-field', 'default_operator=OR'], function() {
